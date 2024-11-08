@@ -74,5 +74,14 @@ void init_sdcard_io()
 
 void sdcard_io_high_speed()
 {
+  SPI1 -> CR1 &= ~SPI_CR1_SPE;
+  SPI1 -> CR1 |= SPI_CR1_BR_0; // DIVIDE SO CLOCK RATE IS 12 MHZ
+  SPI1 -> CR1 |= SPI_CR1_SPE;
+}
+
+void init_lcd_spi()
+{
+  RCC -> AHBENR |= RCC_AHBENR_GPIOBEN;
+
   
 }
