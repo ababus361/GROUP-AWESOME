@@ -89,14 +89,14 @@ void init_lcd_spi()
 
 //things may need to change depending on where the button is plugged in 
 void init_button_interrupt() { 
-  RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
-  GPIOC->MODER &= ~GPIO_MODER_MODER13; //pc13
+  RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+  GPIOC->MODER &= ~GPIO_MODER_MODER0; //pc13
 
-  SYSCFG->EXTICR[3] |= SYSCFG_EXTICR4_EXTI13_PC;
-  EXTI->IMR |= EXTI_IMR_IM13;
-  EXTI->RTSR |= EXTI_RTSR_TR13;
+  SYSCFG->EXTICR[3] |= SYSCFG_EXTICR1_EXTI0_PA;
+  EXTI->IMR |= EXTI_IMR_IM0;
+  EXTI->RTSR |= EXTI_RTSR_TR0;
 
-  NVIC_EnableIRQ(EXTI4_15_IRQn);
+  NVIC_EnableIRQ(EXTI0_1_IRQn);
   SysTick_Config(SystemCoreClock/1000);
 }
 
@@ -105,11 +105,11 @@ void Systick_Handler(void) {
   press_duration++;
 }
 
-void EXTI4_15_IRQHandler(void) { 
-  if(EXTI->PR & EXTI_PR_PR13) {
-    EXTI->PR |= EXTI_PR_PR13; 
+void EXTI0_1_IRQHandler(void) { 
+  if(EXTI->PR & EXTI_PR_PR0) {
+    EXTI->PR |= EXTI_PR_PR0; 
 
-    if(GPIOC->IDR & GPIO_IDR_13){
+    if(GPIOC->IDR & GPIO_IDR_0){
       button_pressed =1;
       press_duration = 0; 
     }
@@ -134,5 +134,7 @@ int main(void) {
   init_spi1_slow();
   init_lcd_spi();
   init_sdcard_io();
+
+    init_button_interrupt();
 
 }
