@@ -19,6 +19,7 @@
 #define DASH '-'
 #define END ' '
 
+//need to handle space between letters and space between words 
 
 static char MorseLower[37] = {'a','b', 'c','d','e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 static char MorseUpper[37] = {'A','B', 'C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
@@ -84,4 +85,54 @@ void init_lcd_spi()
   RCC -> AHBENR |= RCC_AHBENR_GPIOBEN;
 
   
+}
+
+//things may need to change depending on where the button is plugged in 
+void init_button_interrupt() { 
+  RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
+  GPIOC->MODER &= ~GPIO_MODER_MODER13; //pc13
+
+  SYSCFG->EXTICR[3] |= SYSCFG_EXTICR4_EXTI13_PC;
+  EXTI->IMR |= EXTI_IMR_IM13;
+  EXTI->RTSR |= EXTI_RTSR_TR13;
+
+  NVIC_EnableIRQ(EXTI4_15_IRQn);
+  SysTick_Config(SystemCoreClock/1000);
+}
+
+void Systick_Handler(void) { 
+  if(button_pressed)  
+  press_duration++;
+}
+
+void EXTI4_15_IRQHandler(void) { 
+  if(EXTI->PR & EXTI_PR_PR13) {
+    EXTI->PR |= EXTI_PR_PR13; 
+
+    if(GPIOC->IDR & GPIO_IDR_13){
+      button_pressed =1;
+      press_duration = 0; 
+    }
+    else { 
+      press_duration = 0; 
+
+      if(press_duration < SHORT_PRESS) { 
+        // makes sure the super short one is not used 
+      }
+      else if (press_duration < LONG_PRESS) {
+        morse_code[morse_index++] = DOT; 
+      }else { 
+        morse_code[morse_index++] = DASH;
+      }        
+    }
+
+  }
+
+}
+
+int main(void) { 
+  init_spi1_slow();
+  init_lcd_spi();
+  init_sdcard_io();
+
 }
