@@ -92,7 +92,7 @@ void init_lcd_spi()
 void init_button_interrupt() 
 { 
   RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
-  GPIOA->MODER |= GPIO_MODER_MODER0; // PA0 input mode
+  GPIOA->MODER &= ~GPIO_MODER_MODER0; // PA0 input mode
 
   RCC-> APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
 
@@ -105,11 +105,13 @@ void init_button_interrupt()
   //SysTick_Config(SystemCoreClock/1000);
 }
 
-void inti_rgb()
+void init_rgb()
 {
   RCC -> AHBENR |= RCC_AHBENR_GPIOAEN;
+  GPIOA -> MODER |= GPIO_MODER_MODER5_0;
+  //GPIOA ->                                                                                                                                
   GPIOA -> MODER |= GPIO_MODER_MODER8_0 | GPIO_MODER_MODER9_0 | GPIO_MODER_MODER10_0;
-
+  GPIOA -> PUPDR |= GPIO_PUPDR_PUPDR10_1 | GPIO_PUPDR_PUPDR8_1 | GPIO_PUPDR_PUPDR9_1;
 }
 
 
@@ -152,7 +154,8 @@ int main(void)
   // init_usart5();
   // enable_tty_interrupt();
   // setup_tim1();
-  inti_rgb();
+  init_button_interrupt();
+  init_rgb();
   //setrgb();
 
 }
@@ -194,6 +197,8 @@ void EXTI0_1_IRQHandler()
 {
   EXTI -> PR = EXTI_PR_PR0;
   togglexn(GPIOA, 9);
+  togglexn(GPIOA,8);
+  togglexn(GPIOA, 10);
 }
 
 
