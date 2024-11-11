@@ -111,7 +111,7 @@ void init_rgb()
   GPIOA -> MODER |= GPIO_MODER_MODER5_0;
   //GPIOA ->                                                                                                                                
   GPIOA -> MODER |= GPIO_MODER_MODER8_0 | GPIO_MODER_MODER9_0 | GPIO_MODER_MODER10_0;
-  GPIOA -> PUPDR |= GPIO_PUPDR_PUPDR10_1 | GPIO_PUPDR_PUPDR8_1 | GPIO_PUPDR_PUPDR9_1;
+  GPIOA -> PUPDR |= GPIO_PUPDR_PUPDR10_0 | GPIO_PUPDR_PUPDR8_0 | GPIO_PUPDR_PUPDR9_0;
 }
 
 
