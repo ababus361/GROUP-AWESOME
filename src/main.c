@@ -209,7 +209,8 @@ void EXTI0_1_IRQHandler()
   
   while(1)
   {
-    while(((GPIOA -> IDR) & (0x1)))
+    //while((GPIOA -> IDR) & (0xffdf))
+    while((GPIOA -> IDR) & (GPIO_IDR_0 << 0))
     {
       timer++;
       togglexn(GPIOA, 5);
