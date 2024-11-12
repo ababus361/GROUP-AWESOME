@@ -196,9 +196,23 @@ void togglexn(GPIO_TypeDef *port, int n)
 void EXTI0_1_IRQHandler()
 {
   EXTI -> PR = EXTI_PR_PR0;
-  togglexn(GPIOA, 9);
-  togglexn(GPIOA,8);
-  togglexn(GPIOA, 10);
+  
+  
+
+  uint32_t timer = 0;
+  while(GPIOA -> IDR & 0X1)
+  {
+    timer++;
+  }
+  if(timer < 240000)
+  {
+    togglexn(GPIOA, 9);
+  }
+  else
+  {
+    togglexn(GPIOA,8);
+    togglexn(GPIOA, 10);
+  }
 }
 
 
