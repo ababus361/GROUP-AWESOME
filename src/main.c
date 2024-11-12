@@ -26,6 +26,10 @@ static char MorseLower[37] = {'a','b', 'c','d','e', 'f', 'g', 'h', 'i', 'j', 'k'
 static char MorseUpper[37] = {'A','B', 'C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 static char * morse_table[37] = {".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".--", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "..-", ".--", "-..-", "-.--", "--..", ".----", "..---", "...--", "....-", ".....", "-....", "--...", "---..", "----.", "-----"};
 
+void init_spi1_slow();
+void nano_wait(unsigned int n);
+void internal_clock();
+
 //track presses
 uint32_t press_start_time = 0;
 uint32_t press_duration   = 0;
@@ -109,9 +113,11 @@ void init_rgb()
 {
   RCC -> AHBENR |= RCC_AHBENR_GPIOAEN;
   GPIOA -> MODER |= GPIO_MODER_MODER5_0;
-  //GPIOA ->                                                                                                                                
+  GPIOA -> BSRR |= GPIO_BSRR_BS_10 | GPIO_BSRR_BS_8 | GPIO_BSRR_BS_9;                                                                                                                               
   GPIOA -> MODER |= GPIO_MODER_MODER8_0 | GPIO_MODER_MODER9_0 | GPIO_MODER_MODER10_0;
   GPIOA -> PUPDR |= GPIO_PUPDR_PUPDR10_0 | GPIO_PUPDR_PUPDR8_0 | GPIO_PUPDR_PUPDR9_0;
+
+  GPIOA -> MODER |= GPIO_MODER_MODER5_0;
 }
 
 
@@ -200,19 +206,36 @@ void EXTI0_1_IRQHandler()
   
 
   uint32_t timer = 0;
-  while(GPIOA -> IDR & 0X1)
+  
+  while(1)
   {
-    timer++;
+    while(((GPIOA -> IDR) & (0x1)))
+    {
+      timer++;
+      togglexn(GPIOA, 5);
+      
+    }
+    //togglexn(GPIOA, 5);
+    if(timer <= 2400000)
+    {
+      togglexn(GPIOA, 9);
+      nano_wait(10000000000);
+      togglexn(GPIOA, 9);
+      break;
+    }
+    else
+    {
+      togglexn(GPIOA,8);
+      togglexn(GPIOA, 10);
+
+      nano_wait(10000000000);
+
+      togglexn(GPIOA,8);
+      togglexn(GPIOA, 10);
+      break;
+    }
   }
-  if(timer < 240000)
-  {
-    togglexn(GPIOA, 9);
-  }
-  else
-  {
-    togglexn(GPIOA,8);
-    togglexn(GPIOA, 10);
-  }
+
 }
 
 
