@@ -207,10 +207,10 @@ void EXTI0_1_IRQHandler()
 
   uint32_t timer = 0;
   
-  while(1)
-  {
+ // while(1)
+ // {
     //while((GPIOA -> IDR) & (0xffdf))
-    while((GPIOA -> IDR) & (GPIO_IDR_0 << 0))
+     while(((GPIOA -> IDR) & (GPIO_IDR_0)) != 0)
     {
       timer++;
       togglexn(GPIOA, 5);
@@ -222,7 +222,7 @@ void EXTI0_1_IRQHandler()
       togglexn(GPIOA, 9);
       nano_wait(10000000000);
       togglexn(GPIOA, 9);
-      break;
+      //break;
     }
     else
     {
@@ -233,7 +233,7 @@ void EXTI0_1_IRQHandler()
 
       togglexn(GPIOA,8);
       togglexn(GPIOA, 10);
-      break;
+     // break;
     }
   }
 
