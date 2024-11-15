@@ -137,6 +137,16 @@ int spaceCounter = 0;
 
 void morseSearch()
 {
+  int i = 0;
+  while(morse_index[i] != NULL) {
+    int j = 0;
+    while(morse_index[j] != NULL){
+      if(strcmp(morse_index[i], morse_table[j])==0){
+        display(MorseUpper[i]);
+      }
+    }
+    i++;
+  }
   /*
   convert morseString in nested loop
   - look through library
