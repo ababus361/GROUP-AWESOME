@@ -9,6 +9,7 @@
 
 #include "stm32f0xx.h"
 #include <string.h>
+#include <stdio.h> 
 
 // milliseconds
 #define SHORT_PRESS 200
@@ -22,10 +23,10 @@
 
 static char MorseLower[36] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 static char MorseUpper[36] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
-static char *morse_table[36] = {".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".--", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "..-", ".--", "-..-", "-.--", "--..", ".----", "..---", "...--", "....-", ".....", "-....", "--...", "---..", "----.", "-----"};
+static char *morse_table[36] = {".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--..", ".----", "..---", "...--", "....-", ".....", "-....", "--...", "---..", "----.", "-----"};
 
 // Global morse string
-char * morseString;
+char morseString[6];
 int strindex = 0;
 
 void init_spi1_slow();
@@ -137,6 +138,21 @@ void init_tim7()
 
 }
 
+
+void togglexn(GPIO_TypeDef *port, int n)
+{
+  int32_t state;                // state of the specified pin
+  state = port->ODR & (1 << n); // reads ODR value
+  if (state)
+  {
+    port->BRR = (1 << n);
+  }
+  else
+  {
+    port->BSRR = (1 << n);
+  }
+}
+
 int spaceCounter = 0;
 
 void morseSearch()
@@ -182,6 +198,8 @@ void TIM7_IRQHandler()
   TIM7 -> SR &= ~TIM_SR_UIF;
 
   
+
+
   spaceCounter++;
   if(spaceCounter >= 3)
   {
@@ -189,8 +207,16 @@ void TIM7_IRQHandler()
     spaceCounter = 0;
   }
 
-  morseString = '\0';
+  morseSearch();
+
+  //morseString = NULL;
+  for(int n = 0; n < 6; n++)
+  {
+    morseString[n] = NULL;
+  }
+
   strindex = 0;
+
   // togglexn(GPIOA, 5);
   // nano_wait(10000000);
   // togglexn(GPIOA, 5);
@@ -214,22 +240,7 @@ int main(void)
   init_button_interrupt();
   init_rgb();
   init_tim7();
-  morseString = (char *)malloc(sizeof(char) * 6);
-}
-
-
-void togglexn(GPIO_TypeDef *port, int n)
-{
-  int32_t state;                // state of the specified pin
-  state = port->ODR & (1 << n); // reads ODR value
-  if (state)
-  {
-    port->BRR = (1 << n);
-  }
-  else
-  {
-    port->BSRR = (1 << n);
-  }
+  //morseString = (char *)malloc(sizeof(char) * 6);
 }
 
 
@@ -251,7 +262,7 @@ void EXTI0_1_IRQHandler()
     }
     
     //if (((GPIOA->IDR) & (GPIO_IDR_0)) != 0) {}
-    if (timer <= 600000)
+    if (timer <= 800000)
     {
       togglexn(GPIOA, 9);
       nano_wait(200000000);
@@ -273,6 +284,8 @@ void EXTI0_1_IRQHandler()
       TIM7 -> CR1 |= TIM_CR1_CEN;
       TIM7 -> CNT = 0;
     }
+
+    strindex++;
 }
 
 void nano_wait(unsigned int n)
