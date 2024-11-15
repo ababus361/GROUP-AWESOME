@@ -20,9 +20,13 @@
 
 // need to handle space between letters and space between words
 
-static char MorseLower[37] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
-static char MorseUpper[37] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
-static char *morse_table[37] = {".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".--", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "..-", ".--", "-..-", "-.--", "--..", ".----", "..---", "...--", "....-", ".....", "-....", "--...", "---..", "----.", "-----"};
+static char MorseLower[36] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
+static char MorseUpper[36] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
+static char *morse_table[36] = {".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".--", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "..-", ".--", "-..-", "-.--", "--..", ".----", "..---", "...--", "....-", ".....", "-....", "--...", "---..", "----.", "-----"};
+
+// Global morse string
+char * morseString;
+int strindex = 0;
 
 void init_spi1_slow();
 void nano_wait(unsigned int n);
@@ -138,15 +142,31 @@ int spaceCounter = 0;
 void morseSearch()
 {
   int i = 0;
-  while(morse_index[i] != NULL) {
-    int j = 0;
-    while(morse_index[j] != NULL){
-      if(strcmp(morse_index[i], morse_table[j])==0){
-        display(MorseUpper[i]);
-      }
+  // while(morse_index[i] != NULL) {
+  //   int j = 0;
+  //   while(morse_index[j] != NULL){
+  //     if(strcmp(morse_index[i], morse_table[j])==0)
+  //     {
+  //       display(MorseUpper[i]);
+  //     }
+  //   }
+  //   i++;
+  // }
+
+  while(i < 36)
+  {
+    if (strcmp(morseString, morse_table[i])==0)
+    {
+      //display(MorseUpper[i]);
+      togglexn(GPIOA, 5);
+      nano_wait(1000000000);
+      togglexn(GPIOA, 5);
     }
     i++;
   }
+
+
+
   /*
   convert morseString in nested loop
   - look through library
@@ -171,9 +191,9 @@ void TIM7_IRQHandler()
 
   morseString = '\0';
   strindex = 0;
-  togglexn(GPIOA, 5);
-  nano_wait(10000000);
-  togglexn(GPIOA, 5);
+  // togglexn(GPIOA, 5);
+  // nano_wait(10000000);
+  // togglexn(GPIOA, 5);
 }
 
 void Systick_Handler(void)
@@ -183,8 +203,7 @@ void Systick_Handler(void)
 }
 
 
-// Global morse string
-char * morseString;
+
 
 int main(void)
 {
@@ -213,7 +232,7 @@ void togglexn(GPIO_TypeDef *port, int n)
   }
 }
 
-int strindex = 0;
+
 
 void EXTI0_1_IRQHandler()
 {
