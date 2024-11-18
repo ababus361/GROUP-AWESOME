@@ -24,6 +24,7 @@ lcd_dev_t lcddev;
 #define DC_BIT (1<<DC_NUM)
 #define DC_HIGH do { GPIOB->BSRR = GPIO_BSRR_BS_14; } while(0)
 #define DC_LOW  do { GPIOB->BSRR = GPIO_BSRR_BR_14; } while(0)
+#define SLOW_SPI
 
 // Set the CS pin low if val is non-zero.
 // Note that when CS is being set high again, wait on SPI to not be busy.
@@ -352,6 +353,9 @@ __attribute((weak)) void init_lcd_spi(void)
 
 void LCD_Setup() {
     init_lcd_spi();
+    init_spi1_slow();
+    init_sdcard_io();
+
     tft_select(0);
     tft_reset(0);
     tft_reg_select(0);
@@ -872,7 +876,7 @@ const unsigned char asc2_1608[95][16]={
 // size is the height of the character (either 12 or 16)
 // When mode is set, the background will be transparent.
 //===========================================================================
-void _LCD_DrawChar(u16 x,u16 y,u16 fc, u16 bc, u16 num, u8 size, u8 mode)
+void _LCD_DrawChar(u16 x,u16 y,u16 fc, u16 bc, char num, u8 size, u8 mode)
 {
     u8 temp;
     u8 pos,t;
