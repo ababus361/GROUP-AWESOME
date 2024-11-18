@@ -240,9 +240,9 @@ int main(void)
   //init_spi1_slow();
   //init_lcd_spi();
   //init_sdcard_io();'  
-  LCD_Setup();
-  LCD_Clear(0x0);
-  LCD_DrawString(165, 250, 0x0F00, 0x0000, "SPACE INVADERS", 16, 0);
+  // LCD_Setup();
+  // LCD_Clear(0x0);
+  // LCD_DrawString(165, 250, 0x0F00, 0x0000, "SPACE INVADERS", 16, 0);
   internal_clock();
   init_button_interrupt();
   init_rgb();
