@@ -237,14 +237,16 @@ void Systick_Handler(void)
 
 int main(void)
 {
-  init_spi1_slow();
-  init_lcd_spi();
-  init_sdcard_io();
+  //init_spi1_slow();
+  //init_lcd_spi();
+  //init_sdcard_io();
   internal_clock();
   init_button_interrupt();
   init_rgb();
   init_tim7();
-  LCD_DrawString(160-14*4, 120-8, CYAN, BLACK, "Player 1 Wins!", 16, 0);
+  LCD_Setup();
+  LCD_Clear(0x0);
+  LCD_DrawString(165, 250, 0x0F00, 0x0000, "SPACE INVADERS", 16, 0);
   //morseString = (char *)malloc(sizeof(char) * 6);
 }
 

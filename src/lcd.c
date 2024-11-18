@@ -70,11 +70,11 @@ static void tft_reg_select(int val)
 //============================================================================
 // Wait for n nanoseconds. (Maximum: 4.294 seconds)
 //============================================================================
-static inline void nano_wait(unsigned int n) {
-    asm(    "        mov r0,%0\n"
-            "repeat: sub r0,#83\n"
-            "        bgt repeat\n" : : "r"(n) : "r0", "cc");
-}
+// static inline void nano_wait(unsigned int n) {
+//     asm(    "        mov r0,%0\n"
+//             "repeat: sub r0,#83\n"
+//             "        bgt repeat\n" : : "r"(n) : "r0", "cc");
+// }
 
 void LCD_Reset(void)
 {
