@@ -4,6 +4,7 @@
 //============================================================================
 
 #include "stm32f0xx.h"
+#include <stdio.h>
 #include <stdint.h>
 #include "lcd.h"
 
@@ -871,7 +872,7 @@ const unsigned char asc2_1608[95][16]={
 // size is the height of the character (either 12 or 16)
 // When mode is set, the background will be transparent.
 //===========================================================================
-void _LCD_DrawChar(u16 x,u16 y,u16 fc, u16 bc, char num, u8 size, u8 mode)
+void _LCD_DrawChar(u16 x,u16 y,u16 fc, u16 bc, u16 num, u8 size, u8 mode)
 {
     u8 temp;
     u8 pos,t;
@@ -942,7 +943,7 @@ void LCD_DrawString(u16 x,u16 y, u16 fc, u16 bg, const char *p, u8 size, u8 mode
 //===========================================================================
 // Draw a picture with upper left corner at (x0,y0).
 //===========================================================================
-void LCD_DrawPicture(int x0, int y0, const Picture *pic)
+void LCD_DrawPicture(u16 x0, u16 y0, const Picture *pic)
 {
     int x1 = x0 + pic->width-1;
     int y1 = y0 + pic->height-1;

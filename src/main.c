@@ -10,6 +10,10 @@
 #include "stm32f0xx.h"
 #include <string.h>
 #include <stdio.h> 
+#include "lcd.h"
+
+#define WIDTH (320/2)
+#define HEIGHT (240/2)
 
 // milliseconds
 #define SHORT_PRESS 200
@@ -240,6 +244,7 @@ int main(void)
   init_button_interrupt();
   init_rgb();
   init_tim7();
+  LCD_DrawString(160-14*4, 120-8, CYAN, BLACK, "Player 1 Wins!", 16, 0);
   //morseString = (char *)malloc(sizeof(char) * 6);
 }
 
