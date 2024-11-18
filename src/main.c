@@ -237,7 +237,7 @@ void Systick_Handler(void)
 
 int main(void)
 {
-  init_spi1_slow();
+  //init_spi1_slow();
   //init_lcd_spi();
   //init_sdcard_io();'  
   LCD_Setup();
