@@ -11,6 +11,10 @@
 #include <string.h>
 #include <stdio.h> 
 #include "lcd.h"
+#include "ff.h"
+#include "diskio.h"
+#include "sdcard.h"
+
 
 #define WIDTH (320/2)
 #define HEIGHT (240/2)
@@ -93,6 +97,15 @@ void spi1_display2(const char *string) {
 
 }
 
+
+FRESULT openSDCardFile(FATFS *FatFs, FIL *fil, char* filename) {
+    // Open file, and return it's result code
+    return f_open(fil, filename, FA_READ);
+}
+
+FRESULT closeSDCardFile(FATFS *FatFs, FIL *fil) {
+    return f_close(fil); // Close file
+}
 
 void init_spi1_slow()
 {
