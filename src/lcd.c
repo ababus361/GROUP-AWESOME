@@ -352,9 +352,9 @@ __attribute((weak)) void init_lcd_spi(void)
 }
 
 void LCD_Setup() {
-    init_lcd_spi();
-    init_spi1_slow();
-    init_sdcard_io();
+    // init_lcd_spi();
+    // init_spi1_slow();
+    // init_sdcard_io();
 
     tft_select(0);
     tft_reset(0);

@@ -29,6 +29,15 @@ static char MorseLower[36] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 
 static char MorseUpper[36] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 static char *morse_table[36] = {".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--..", ".----", "..---", "...--", "....-", ".....", "-....", "--...", "---..", "----.", "-----"};
 
+uint16_t display[34] = {
+        0x002, // Command to set the cursor at the first position line 1
+        0x200+'E', 0x200+'C', 0x200+'E', 0x200+'3', 0x200+'6', + 0x200+'2', 0x200+' ', 0x200+'i',
+        0x200+'s', 0x200+' ', 0x200+'t', 0x200+'h', + 0x200+'e', 0x200+' ', 0x200+' ', 0x200+' ',
+        0x0c0, // Command to set the cursor at the first position line 2
+        0x200+'c', 0x200+'l', 0x200+'a', 0x200+'s', 0x200+'s', + 0x200+' ', 0x200+'f', 0x200+'o',
+        0x200+'r', 0x200+' ', 0x200+'y', 0x200+'o', + 0x200+'u', 0x200+'!', 0x200+' ', 0x200+' ',
+};
+
 // Global morse string
 char morseString[6];
 int strindex = 0;
@@ -46,16 +55,56 @@ uint8_t button_pressed = 0;
 char morse_code[100];
 uint8_t morse_index = 0;
 
+
+// CODE FROM LAB 6
+void spi_cmd(unsigned int data) {
+    while(!(SPI1 -> SR & SPI_SR_TXE)){}
+    SPI1 -> DR = data;
+
+}
+void spi_data(unsigned int data) {
+    spi_cmd(data | 0x200);
+    
+}
+void spi1_init_oled() {
+    nano_wait(1000000);
+    spi_cmd(0x38);
+    spi_cmd(0x08);
+    spi_cmd(0x01);
+    nano_wait(2000000);
+    spi_cmd(0x06);
+    spi_cmd(0x02);
+    spi_cmd(0x0c);
+}
+void spi1_display1(const char *string) {
+    int i;
+    spi_cmd(0x02); // move cursor to home position
+    for(i = 0; string[i] != '\0'; i++){
+        spi_data(string[i]);
+    }
+
+}
+void spi1_display2(const char *string) {
+    int i;
+    spi_cmd(0xc0); // move cursor to second row
+    for(i = 0; string[i] != '\0'; i++){
+        spi_data(string[i]);
+    }
+
+}
+
+
 void init_spi1_slow()
 {
   RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-
   RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
-  GPIOB->MODER |= GPIO_MODER_MODER3_1 | GPIO_MODER_MODER4_1 | GPIO_MODER_MODER5_1;
-  GPIOB->AFR[0] |= 0x0;
 
-  SPI1->CR1 |= SPI_CR1_BR_2 | SPI_CR1_BR_1 | SPI_CR1_BR_0; // SET MAX BAUD RATE
+  GPIOB->MODER |= GPIO_MODER_MODER3_1 | GPIO_MODER_MODER4_1 | GPIO_MODER_MODER5_1;
+  GPIOB->AFR[0] &= ~(GPIO_AFRL_AFRL3 | GPIO_AFRL_AFRL4 | GPIO_AFRL_AFRL5);
+
+
+  SPI1->CR1 &= ~(SPI_CR1_BR);//|= SPI_CR1_BR_2 | SPI_CR1_BR_1 | SPI_CR1_BR_0; // SET MAX BAUD RATE
   SPI1->CR1 |= SPI_CR1_MSTR;                               // MASTER MODE
   SPI1->CR2 |= SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2; // DATA SIZE 8 BITS
 
@@ -95,6 +144,10 @@ void sdcard_io_high_speed()
 void init_lcd_spi()
 {
   RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+
+  GPIOB -> MODER |= GPIO_MODER_MODER8_0 | GPIO_MODER_MODER11_0 | GPIO_MODER_MODER14_0;
+  init_spi1_slow();
+  sdcard_io_high_speed();
 }
 
 // things may need to change depending on where the button is plugged in
@@ -122,12 +175,11 @@ void init_button_interrupt()
 void init_rgb()
 {
   RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
-  GPIOA->MODER |= GPIO_MODER_MODER5_0;
+  GPIOA->MODER |= GPIO_MODER_MODER1_0;
   GPIOA->BSRR |= GPIO_BSRR_BS_10 | GPIO_BSRR_BS_8 | GPIO_BSRR_BS_9;
   GPIOA->MODER |= GPIO_MODER_MODER8_0 | GPIO_MODER_MODER9_0 | GPIO_MODER_MODER10_0;
   GPIOA->PUPDR |= GPIO_PUPDR_PUPDR10_0 | GPIO_PUPDR_PUPDR8_0 | GPIO_PUPDR_PUPDR9_0;
 
-  GPIOA->MODER |= GPIO_MODER_MODER5_0;
 }
 
 void init_tim7()
@@ -142,6 +194,39 @@ void init_tim7()
 
 }
 
+void init_spi2() {
+    RCC -> AHBENR |= RCC_AHBENR_GPIOBEN;
+    RCC -> APB1ENR |= RCC_APB1ENR_SPI2EN;
+    GPIOB -> MODER &= ~(GPIO_MODER_MODER15 | GPIO_MODER_MODER12 | GPIO_MODER_MODER13);
+    GPIOB -> MODER |= GPIO_MODER_MODER15_1 | GPIO_MODER_MODER12_1 | GPIO_MODER_MODER13_1; // PB15, PB12, PB13 SET TO ALT MODE
+    GPIOB -> AFR[1] = 0x00000000;
+
+    RCC -> APB2ENR |= RCC_APB2ENR_SPI1EN;
+    SPI2 -> CR1 &= ~SPI_CR1_SPE;
+    SPI2 -> CR1 |= SPI_CR1_BR; //_0 | SPI_CR1_BR_1 | SPI_CR1_BR_2;
+    SPI2 -> CR2 = SPI_CR2_DS_0 | SPI_CR2_DS_3; // 16 bit data size
+    SPI2 -> CR1 |= SPI_CR1_MSTR; // MASTER ENABLE
+    SPI2 -> CR2 |= SPI_CR2_SSOE; // SS OUTPUT ENABLE
+    SPI2 -> CR2 |= SPI_CR2_NSSP; // NSSP ENABLE
+    SPI2 -> CR2 |= SPI_CR2_TXDMAEN; // DMA OUTPUT ENABLE
+    SPI2 -> CR1 |= SPI_CR1_SPE; // SPI ENABLE
+}
+
+void spi2_setup_dma(void) {
+    RCC -> AHBENR |= RCC_AHBENR_DMAEN;
+    DMA1_Channel5 -> CCR &= ~DMA_CCR_EN; // turn off DMA1 CHANNEL3
+    DMA1_Channel5 -> CMAR = (uint32_t)display;
+    DMA1_Channel5 -> CPAR = (uint32_t)&(SPI2 -> DR);
+    DMA1_Channel5 -> CNDTR = 34;
+    DMA1_Channel5 -> CCR |= DMA_CCR_DIR;
+    DMA1_Channel5 -> CCR |= DMA_CCR_MINC;
+    DMA1_Channel5 -> CCR &= ~DMA_CCR_MSIZE_1;  // clear bits 0 and 1
+    DMA1_Channel5 -> CCR &= ~DMA_CCR_PSIZE_1; 
+    DMA1_Channel5 -> CCR |= DMA_CCR_MSIZE_0; // set bit 0 to 1
+    DMA1_Channel5 -> CCR |= DMA_CCR_PSIZE_0;
+    DMA1_Channel5 -> CCR |= DMA_CCR_CIRC;
+    DMA1_Channel5 -> CCR |= DMA_CCR_EN;
+}
 
 void togglexn(GPIO_TypeDef *port, int n)
 {
@@ -158,29 +243,32 @@ void togglexn(GPIO_TypeDef *port, int n)
 }
 
 int spaceCounter = 0;
+int spaceCounterTripped = 0;
+
+int xdim = 0;
+int ydim = 0;
 
 void morseSearch()
 {
   int i = 0;
-  // while(morse_index[i] != NULL) {
-  //   int j = 0;
-  //   while(morse_index[j] != NULL){
-  //     if(strcmp(morse_index[i], morse_table[j])==0)
-  //     {
-  //       display(MorseUpper[i]);
-  //     }
-  //   }
-  //   i++;
-  // }
 
   while(i < 36)
   {
     if (strcmp(morseString, morse_table[i])==0)
     {
       //display(MorseUpper[i]);
-      togglexn(GPIOA, 5);
+      LCD_DrawChar(xdim,ydim,MAGENTA, BLACK, MorseUpper[i], 16, 0);
+      togglexn(GPIOA, 1);
       nano_wait(1000000000);
-      togglexn(GPIOA, 5);
+      togglexn(GPIOA, 1);
+      xdim += 8;
+      if (xdim >= 240)
+      {
+        ydim += 16;
+        xdim = 0;
+      }
+      spaceCounter = 0;
+      spaceCounterTripped = 0;
     }
     i++;
   }
@@ -197,18 +285,24 @@ void morseSearch()
   */
 }
 
+
 void TIM7_IRQHandler()
 {
   TIM7 -> SR &= ~TIM_SR_UIF;
 
-  
-
-
   spaceCounter++;
-  if(spaceCounter >= 3)
+  if((spaceCounter >= 3) && (spaceCounterTripped == 0))
   {
     // Insert space between morse words
+    LCD_DrawChar(xdim,ydim,MAGENTA, BLACK, 32,16,0);
+    xdim += 8;
+    if (xdim >= 240)
+    {
+      ydim += 16;
+      xdim = 0;
+    }
     spaceCounter = 0;
+    spaceCounterTripped = 1;
   }
 
   morseSearch();
@@ -237,21 +331,16 @@ void Systick_Handler(void)
 
 int main(void)
 {
-  // init_spi1_slow();
-  // init_sdcard_io();
+  init_lcd_spi();
+  init_sdcard_io();
   LCD_Setup();
-  LCD_Clear(RED);
-  LCD_DrawString(165, 250, 0x0F00, 0x0000, "SPACE INVADERS", 16, 0);
-
+  init_spi2();
+  spi2_setup_dma();
   internal_clock();
   init_button_interrupt();
   init_rgb();
   init_tim7();
-  //LCD_Setup();
-
-  // LCD_Clear(0x0);
-  // LCD_DrawString(60, 150, 0x0F00, 0x0000, "SPACE INVADERS", 16, 0);
-  //morseString = (char *)malloc(sizeof(char) * 6);
+  spi1_display1("Hello again,");
 }
 
 
@@ -281,6 +370,7 @@ void EXTI0_1_IRQHandler()
       morseString[strindex] = '.';
       TIM7 -> CR1 |= TIM_CR1_CEN;
       TIM7 -> CNT = 0;
+      //spi1_display1('.');
     }
     else
     {
@@ -294,6 +384,7 @@ void EXTI0_1_IRQHandler()
       morseString[strindex] = '-';
       TIM7 -> CR1 |= TIM_CR1_CEN;
       TIM7 -> CNT = 0;
+      //spi1_display1('-');
     }
 
     strindex++;
@@ -305,206 +396,3 @@ void nano_wait(unsigned int n)
       "repeat: sub r0,#83\n"
       "        bgt repeat\n" : : "r"(n) : "r0", "cc");
 }
-
-// void init_usart5() {
-//     // TODO
-//     //Enable the RCC clocks to GPIOC and GPIOD.
-//     RCC -> AHBENR |= RCC_AHBENR_GPIOCEN;
-//     RCC -> AHBENR |= RCC_AHBENR_GPIODEN;
-//     //Enable the RCC clock to the USART5 peripheral.
-//     RCC -> APB1ENR |= RCC_APB1ENR_USART5EN;
-
-//     //configure pin PC12 to be routed to USART5_TX & USART5_RX
-//     //USART5_TX PC12
-//     GPIOC -> MODER  &= ~(GPIO_MODER_MODER12); //CLear C 12
-//     GPIOC -> MODER  |= GPIO_MODER_MODER12_1; //alternate (1) for 12
-//     GPIOC->AFR[1] &= ~(0xF << (4 * (12 - 8)));
-//     GPIOC->AFR[1] |= (2 << (4 * (12 - 8)));
-//     //USART_RX PD2
-//     GPIOD -> MODER  &= ~(GPIO_MODER_MODER2); //clear D 2
-//     GPIOD -> MODER  |= GPIO_MODER_MODER2_1; //alternate (1) for 2
-//     GPIOD->AFR[0] &= ~(0xF << (4 * 2));
-//     GPIOD->AFR[0] |= (2 << (4 * 2));
-
-//     //disable USART5 by turning off UE bit.
-//     USART5 -> CR1 &= ~USART_CR1_UE; //off
-//     //Set a word size of 8 bits.
-//     USART5 -> CR1 &= ~USART_CR1_M; //M0 M1 clear
-//     //Set 1 stop bit
-//     USART5 -> CR2 &= ~USART_CR2_STOP;
-//     //set no parity control
-//     USART5 -> CR1 &= ~USART_CR1_PCE;
-//     //Use 16x oversampling.
-//     USART5 -> CR1 &= ~USART_CR1_OVER8;
-//     //Baud rate: 115200
-//     //Family reference = SystemCoreClock
-//     USART5 -> BRR = 48000000 / 115200;
-//     //Enable the transmitter and the receiver by setting the TE and RE bits.
-//     USART5 -> CR1 |= USART_CR1_TE; //TE
-//     USART5 -> CR1 |= USART_CR1_RE; //RE
-//     //Enable the USART.
-//     USART5->CR1 |= USART_CR1_UE;
-//     //wait for the TE and RE bits to be acknowledged by checking that TEACK and REACK
-//     while(!(USART5->ISR & USART_ISR_TEACK));
-//     while(!(USART5->ISR & USART_ISR_REACK));
-// }
-
-// int __io_putchar(int c) {
-//     // TODO
-//     if (c == '\n') {
-//         while(!(USART5->ISR & USART_ISR_TXE));
-//         USART5 -> TDR = '\r';
-//     }
-//     while(!(USART5->ISR & USART_ISR_TXE));
-//     USART5->TDR = c;
-//     return c;
-// }
-
-// int __io_getchar(void) {
-//     while (!(USART5->ISR & USART_ISR_RXNE));
-//     char c = USART5->RDR;
-//     // TODO
-//     if (c == '\r') {
-//         c = '\n';
-//     }
-//     __io_putchar(c);
-//     return c;
-// }
-
-// #include <stdio.h>
-// #include "fifo.h"
-// #include "tty.h"
-
-// #define FIFOSIZE 16
-// char serfifo[FIFOSIZE];
-// int seroffset = 0;
-
-// TODO DMA data structures
-
-// void enable_tty_interrupt(void) {
-//     // TODO
-//     USART5 -> CR1 |= USART_CR1_RXNEIE;
-//     NVIC_EnableIRQ(USART3_8_IRQn);
-//     USART5 -> CR3 |= USART_CR3_DMAR;
-
-//     RCC -> AHBENR |= RCC_AHBENR_DMA2EN;
-//     DMA2 -> CSELR |= DMA2_CSELR_CH2_USART5_RX;
-//     DMA2_Channel2 -> CCR &= ~DMA_CCR_EN;  // First make sure DMA is turned off
-
-//     DMA2_Channel2 -> CMAR = (uint32_t)serfifo;
-//     DMA2_Channel2 -> CPAR = (uint32_t)&(USART5->RDR);
-//     DMA2_Channel2 -> CNDTR = FIFOSIZE;
-//     DMA2_Channel2 -> CCR &= ~(DMA_CCR_DIR);
-//     DMA2_Channel2 -> CCR &= ~(DMA_CCR_MSIZE | DMA_CCR_PSIZE);
-//     DMA2_Channel2 -> CCR |= DMA_CCR_MINC;
-//     DMA2_Channel2 -> CCR &= ~DMA_CCR_PINC;
-//     DMA2_Channel2 -> CCR |= DMA_CCR_CIRC;
-//     DMA2_Channel2 -> CCR &= ~DMA_CCR_MEM2MEM;
-//     DMA2_Channel2 -> CCR |= DMA_CCR_PL;
-
-//     DMA2_Channel2 -> CCR |= DMA_CCR_EN;
-// }
-
-// Works like line_buffer_getchar(), but does not check or clear ORE nor wait on new characters in USART
-// char interrupt_getchar() {
-//     // TODO
-//     while (fifo_newline(&input_fifo) == 0) {
-//         asm volatile ("wfi");
-//     }
-//     return fifo_remove(&input_fifo);
-// }
-
-// int __io_putchar(int c) {
-//     // TODO copy from STEP2
-//     if (c == '\n') {
-//         while(!(USART5->ISR & USART_ISR_TXE));
-//         USART5 -> TDR = '\r';
-//     }
-//     while(!(USART5->ISR & USART_ISR_TXE));
-//     USART5->TDR = c;
-//     return c;
-// }
-
-// int __io_getchar(void) {
-//     // TODO Use interrupt_getchar() instead of line_buffer_getchar()
-//     return interrupt_getchar();
-// }
-
-// TODO Copy the content for the USART5 ISR here
-// void USART3_8_IRQHandler(void) {
-//     while(DMA2_Channel2->CNDTR != sizeof serfifo - seroffset) {
-//         if (!fifo_full(&input_fifo)) {
-//             insert_echo_char(serfifo[seroffset]);
-//         }
-//         seroffset = (seroffset + 1) % sizeof serfifo;
-//     }
-// }
-// // TODO Remember to look up for the proper name of the ISR function
-
-// void setup_tim1(void) {
-//     // Generally the steps are similar to those in setup_tim3
-//     // except we will need to set the MOE bit in BDTR.
-//     // Be sure to do so ONLY after enabling the RCC clock to TIM1.
-//     RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
-//     RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
-
-//     //GPIOA->MODER &= ~(0xFF0000);
-//     GPIOA->MODER |= 0xAA0000;
-
-//     //GPIOA->AFR[1] &= ~(0xFFFF000);
-//     GPIOA->AFR[1] |= 0x2222;
-
-//     TIM1->BDTR |= TIM_BDTR_MOE;
-
-//     TIM1->PSC = (1 - 1);
-//     TIM1->ARR = (2400 - 1);
-
-//     TIM1 -> CCMR1 |= TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_2; //8
-//     TIM1 -> CCMR1 |= TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2M_2; //9
-//     //TIM1 -> CCMR1 &= ~(TIM_CCMR1_OC1M_0 | TIM_CCMR1_OC2M_0); //CLEAR
-
-//     TIM1 -> CCMR2 |= TIM_CCMR2_OC3M_1 | TIM_CCMR2_OC3M_2; //10
-//     TIM1 -> CCMR2 |= TIM_CCMR2_OC4M_1 | TIM_CCMR2_OC4M_2; //11
-//     //TIM1 -> CCMR2 &= ~(TIM_CCMR2_OC3M_0 | TIM_CCMR2_OC4M_0);
-
-//     TIM1->CCMR2 |= TIM_CCMR2_OC4PE; //ch 4
-
-//     TIM1 -> CCER |= TIM_CCER_CC1E;
-//     TIM1 -> CCER |= TIM_CCER_CC2E;
-//     TIM1 -> CCER |= TIM_CCER_CC3E;
-//     TIM1 -> CCER |= TIM_CCER_CC4E;
-
-//     TIM1->CR1 |= TIM_CR1_CEN;
-// }
-
-// int getrgb(void);
-
-// Helper function for you
-// Accept a byte in BCD format and convert it to decimal
-// uint8_t bcd2dec(uint8_t bcd) {
-//     // Lower digit
-//     uint8_t dec = bcd & 0xF;
-
-//     // Higher digit
-//     dec += 10 * (bcd >> 4);
-//     return dec;
-// }
-
-// void setrgb(int rgb) {
-//     int volume = 2400;
-
-//     uint8_t b = bcd2dec(rgb & 0xFF);
-//     uint8_t g = bcd2dec((rgb >> 8) & 0xFF);
-//     uint8_t r = bcd2dec((rgb >> 16) & 0xFF);
-
-//     int blue  = (100 - b) * volume / 100;
-//     int green = (100 - g) * volume / 100;
-//     int red   = (100 - r) * volume / 100;
-//     // TODO: Assign values to TIM1->CCRx registers
-//     // Remember these are all percentages
-//     TIM1 -> CCR1 = red;
-//     TIM1 -> CCR2 = green;
-//     TIM1 -> CCR3 = blue;
-//     // Also, LEDs are on when the corresponding PWM output is low
-//     // so you might want to invert the numbers.
-// }
