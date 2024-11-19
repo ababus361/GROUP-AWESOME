@@ -64,7 +64,7 @@ uint8_t morse_index = 0;
 
 // CODE FROM LAB 6
 void spi_cmd(unsigned int data) {
-    while(!(SPI2 -> SR & SPI_SR_TXE)){}
+    //while(!(SPI2 -> SR & SPI_SR_TXE)){}
     SPI2 -> DR = data;
 
 }
@@ -286,8 +286,10 @@ void morseSearch()
       spaceCounterTripped = 0;
     }
     i++;
+    
   }
-
+  spi_cmd(0x01);
+  //nano_wait(20000);
 
 
   /*
@@ -331,7 +333,7 @@ void TIM7_IRQHandler()
     morseString2[n] = NULL;
   }
   strindex = 0;
-  /////////////////////////////////spi_cmd(0x01);
+  ///spi_cmd(0x01);
   ////////////////////////////////nano_wait(2000000);
 
   // togglexn(GPIOA, 5);
