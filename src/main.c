@@ -43,6 +43,8 @@ uint16_t display[34] = {
 };
 
 // Global morse string
+uint16_t morseString2[6] = {0x002};
+//morseString2 = 0x002;
 char morseString[6];
 int strindex = 0;
 
@@ -62,8 +64,8 @@ uint8_t morse_index = 0;
 
 // CODE FROM LAB 6
 void spi_cmd(unsigned int data) {
-    while(!(SPI1 -> SR & SPI_SR_TXE)){}
-    SPI1 -> DR = data;
+    while(!(SPI2 -> SR & SPI_SR_TXE)){}
+    SPI2 -> DR = data;
 
 }
 void spi_data(unsigned int data) {
@@ -214,7 +216,7 @@ void init_spi2() {
     GPIOB -> MODER |= GPIO_MODER_MODER15_1 | GPIO_MODER_MODER12_1 | GPIO_MODER_MODER13_1; // PB15, PB12, PB13 SET TO ALT MODE
     GPIOB -> AFR[1] = 0x00000000;
 
-    RCC -> APB2ENR |= RCC_APB2ENR_SPI1EN;
+    RCC -> APB1ENR |= RCC_APB1ENR_SPI2EN;
     SPI2 -> CR1 &= ~SPI_CR1_SPE;
     SPI2 -> CR1 |= SPI_CR1_BR; //_0 | SPI_CR1_BR_1 | SPI_CR1_BR_2;
     SPI2 -> CR2 = SPI_CR2_DS_0 | SPI_CR2_DS_3; // 16 bit data size
@@ -228,9 +230,9 @@ void init_spi2() {
 void spi2_setup_dma(void) {
     RCC -> AHBENR |= RCC_AHBENR_DMAEN;
     DMA1_Channel5 -> CCR &= ~DMA_CCR_EN; // turn off DMA1 CHANNEL3
-    DMA1_Channel5 -> CMAR = (uint32_t)display;
+    DMA1_Channel5 -> CMAR = (uint32_t)morseString2;
     DMA1_Channel5 -> CPAR = (uint32_t)&(SPI2 -> DR);
-    DMA1_Channel5 -> CNDTR = 34;
+    DMA1_Channel5 -> CNDTR = 6;
     DMA1_Channel5 -> CCR |= DMA_CCR_DIR;
     DMA1_Channel5 -> CCR |= DMA_CCR_MINC;
     DMA1_Channel5 -> CCR &= ~DMA_CCR_MSIZE_1;  // clear bits 0 and 1
@@ -317,7 +319,6 @@ void TIM7_IRQHandler()
     spaceCounter = 0;
     spaceCounterTripped = 1;
   }
-
   morseSearch();
 
   //morseString = NULL;
@@ -325,8 +326,13 @@ void TIM7_IRQHandler()
   {
     morseString[n] = NULL;
   }
-
+  for(int n = 1; n < 6; n++)
+  {
+    morseString2[n] = NULL;
+  }
   strindex = 0;
+  /////////////////////////////////spi_cmd(0x01);
+  ////////////////////////////////nano_wait(2000000);
 
   // togglexn(GPIOA, 5);
   // nano_wait(10000000);
@@ -348,12 +354,14 @@ int main(void)
   init_sdcard_io();
   LCD_Setup();
   init_spi2();
+  spi1_init_oled();
   spi2_setup_dma();
   internal_clock();
   init_button_interrupt();
   init_rgb();
   init_tim7();
-  spi1_display1("Hello again,");
+  spi1_init_oled();
+  //spi1_display1("Hello again,");
 }
 
 
@@ -384,6 +392,7 @@ void EXTI0_1_IRQHandler()
       TIM7 -> CR1 |= TIM_CR1_CEN;
       TIM7 -> CNT = 0;
       //spi1_display1('.');
+      morseString2[strindex + 1] = 0x200 + '.';
     }
     else
     {
@@ -395,6 +404,7 @@ void EXTI0_1_IRQHandler()
       togglexn(GPIOA, 8);
       togglexn(GPIOA, 10);
       morseString[strindex] = '-';
+      morseString2[strindex + 1] = 0x200 + '-';
       TIM7 -> CR1 |= TIM_CR1_CEN;
       TIM7 -> CNT = 0;
       //spi1_display1('-');
