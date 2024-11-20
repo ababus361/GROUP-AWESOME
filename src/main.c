@@ -43,10 +43,13 @@ uint16_t display[34] = {
 };
 
 // Global morse string
-uint16_t morseString2[6] = {0x002};
+uint16_t morseString2[7] = {0x002};
 //morseString2 = 0x002;
 char morseString[6];
 int strindex = 0;
+
+FILE* fptr;
+
 
 void init_spi1_slow();
 void nano_wait(unsigned int n);
@@ -63,9 +66,14 @@ uint8_t morse_index = 0;
 
 
 // CODE FROM LAB 6
-void spi_cmd(unsigned int data) {
-    //while(!(SPI2 -> SR & SPI_SR_TXE)){}
-    SPI2 -> DR = data;
+void spi_cmd(unsigned int data) 
+{
+
+  while(!(SPI2 -> SR & SPI_SR_TXE)){}
+  // SPI2 -> SR |= SPI_SR_TXE;
+   
+  //nano_wait(1000);
+  SPI2 -> DR = data;
 
 }
 void spi_data(unsigned int data) {
@@ -214,16 +222,18 @@ void init_spi2() {
     RCC -> APB1ENR |= RCC_APB1ENR_SPI2EN;
     GPIOB -> MODER &= ~(GPIO_MODER_MODER15 | GPIO_MODER_MODER12 | GPIO_MODER_MODER13);
     GPIOB -> MODER |= GPIO_MODER_MODER15_1 | GPIO_MODER_MODER12_1 | GPIO_MODER_MODER13_1; // PB15, PB12, PB13 SET TO ALT MODE
-    GPIOB -> AFR[1] = 0x00000000;
+    GPIOB -> AFR[1] &= ~0xF0FF0000;
 
     RCC -> APB1ENR |= RCC_APB1ENR_SPI2EN;
     SPI2 -> CR1 &= ~SPI_CR1_SPE;
     SPI2 -> CR1 |= SPI_CR1_BR; //_0 | SPI_CR1_BR_1 | SPI_CR1_BR_2;
-    SPI2 -> CR2 = SPI_CR2_DS_0 | SPI_CR2_DS_3; // 16 bit data size
+    SPI2 -> CR2 |= SPI_CR2_DS_3; // 10 bit data size
+    SPI2 -> CR2 &= ~(SPI_CR2_DS_2 | SPI_CR2_DS_1); // 10 bit data size
+
     SPI2 -> CR1 |= SPI_CR1_MSTR; // MASTER ENABLE
     SPI2 -> CR2 |= SPI_CR2_SSOE; // SS OUTPUT ENABLE
     SPI2 -> CR2 |= SPI_CR2_NSSP; // NSSP ENABLE
-    SPI2 -> CR2 |= SPI_CR2_TXDMAEN; // DMA OUTPUT ENABLE
+    
     SPI2 -> CR1 |= SPI_CR1_SPE; // SPI ENABLE
 }
 
@@ -231,8 +241,10 @@ void spi2_setup_dma(void) {
     RCC -> AHBENR |= RCC_AHBENR_DMAEN;
     DMA1_Channel5 -> CCR &= ~DMA_CCR_EN; // turn off DMA1 CHANNEL3
     DMA1_Channel5 -> CMAR = (uint32_t)morseString2;
+    //DMA1_Channel5 -> CMAR = (uint32_t)display;
+
     DMA1_Channel5 -> CPAR = (uint32_t)&(SPI2 -> DR);
-    DMA1_Channel5 -> CNDTR = 6;
+    DMA1_Channel5 -> CNDTR = 17;
     DMA1_Channel5 -> CCR |= DMA_CCR_DIR;
     DMA1_Channel5 -> CCR |= DMA_CCR_MINC;
     DMA1_Channel5 -> CCR &= ~DMA_CCR_MSIZE_1;  // clear bits 0 and 1
@@ -241,6 +253,7 @@ void spi2_setup_dma(void) {
     DMA1_Channel5 -> CCR |= DMA_CCR_PSIZE_0;
     DMA1_Channel5 -> CCR |= DMA_CCR_CIRC;
     DMA1_Channel5 -> CCR |= DMA_CCR_EN;
+    SPI2 -> CR2 |= SPI_CR2_TXDMAEN; // DMA OUTPUT ENABLE
 }
 
 void togglexn(GPIO_TypeDef *port, int n)
@@ -263,6 +276,16 @@ int spaceCounterTripped = 0;
 int xdim = 0;
 int ydim = 0;
 
+void stringReset()
+{
+  // null out morseString2
+  morseString2[1] = 0x01;
+  for (int n = 2; n < 7; n++)
+  {
+    morseString2[n] = 0x002 + ' ';
+  }
+}
+
 void morseSearch()
 {
   int i = 0;
@@ -284,12 +307,18 @@ void morseSearch()
       }
       spaceCounter = 0;
       spaceCounterTripped = 0;
+      // UINT wlen;
+      // enable_sdcard();
+      // f_write(fptr, MorseUpper[i], 1, &wlen);
+      // disbale_sdcard();
     }
     i++;
     
   }
-  spi_cmd(0x01);
-  //nano_wait(20000);
+  // spi_cmd(0x01);
+  //morseString2 = NULL;
+  stringReset();
+  nano_wait(20000);
 
 
   /*
@@ -328,10 +357,11 @@ void TIM7_IRQHandler()
   {
     morseString[n] = NULL;
   }
-  for(int n = 1; n < 6; n++)
-  {
-    morseString2[n] = NULL;
-  }
+  stringReset();
+  // for(int n = 1; n < 6; n++)
+  // {
+  //   morseString2[n] = NULL;
+  // }
   strindex = 0;
   ///spi_cmd(0x01);
   ////////////////////////////////nano_wait(2000000);
@@ -363,7 +393,9 @@ int main(void)
   init_rgb();
   init_tim7();
   spi1_init_oled();
-  //spi1_display1("Hello again,");
+  // enable_sdcard();
+  // f_open(fptr, 'abc.txt', FA_CREATE_NEW);
+  // disbale_sdcard();
 }
 
 
@@ -411,7 +443,6 @@ void EXTI0_1_IRQHandler()
       TIM7 -> CNT = 0;
       //spi1_display1('-');
     }
-
     strindex++;
 }
 
