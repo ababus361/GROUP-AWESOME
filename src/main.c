@@ -311,6 +311,25 @@ void morseSearch()
       // enable_sdcard();
       // f_write(fptr, MorseUpper[i], 1, &wlen);
       // disbale_sdcard();
+
+      FATFS FS;
+      FRESULT res = f_mount(&FS, "", 1);
+      
+      FIL fil;        /* File object */
+      char line[100]; /* Line buffer */
+      FRESULT fr;     /* FatFs return code */
+      fr = f_open(&fil, "abc.txt", FA_WRITE|FA_OPEN_EXISTING|FA_OPEN_APPEND);
+      // if (fr) {
+      //     print_error(fr, argv[1]);
+      //     return;
+      // }
+      UINT wlen = 0;
+      BYTE len = 1;
+      char str[1];// = MorseUpper[i];
+      sprintf(str, "%c", MorseUpper[i]);
+      fr = f_write(&fil, (BYTE*)str, len, &wlen);
+      nano_wait(100);
+      f_close(&fil);
     }
     i++;
     
@@ -382,13 +401,13 @@ void Systick_Handler(void)
 
 int main(void)
 {
+  internal_clock();
   init_lcd_spi();
   init_sdcard_io();
   LCD_Setup();
   init_spi2();
   spi1_init_oled();
   spi2_setup_dma();
-  internal_clock();
   init_button_interrupt();
   init_rgb();
   init_tim7();
@@ -396,6 +415,22 @@ int main(void)
   // enable_sdcard();
   // f_open(fptr, 'abc.txt', FA_CREATE_NEW);
   // disbale_sdcard();
+
+
+  // FATFS FS;
+  // FRESULT res = f_mount(&FS, "", 1);
+  
+  // FIL fil;        /* File object */
+  // char line[100]; /* Line buffer */
+  // FRESULT fr;     /* FatFs return code */
+  // fr = f_open(&fil, "abc.txt", FA_WRITE|FA_CREATE_NEW);
+  // // if (fr) {
+  // //     print_error(fr, argv[1]);
+  // //     return;
+  // // }
+  // UINT wlen = 0;
+  // BYTE len = 1;
+  // fr = f_write(&fil, (BYTE*)line, len, &wlen);
 }
 
 
